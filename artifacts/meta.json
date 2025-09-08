@@ -1,0 +1,7 @@
+{
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "dim": 384,
+  "doc_count": 42202,
+  "normalized": true,
+  "notes": "Vectors are L2-normalized for cosine/IP search."
+}
