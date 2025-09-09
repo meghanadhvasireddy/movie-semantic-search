@@ -6,3 +6,5 @@ sentence-transformers==2.7.0
 torch>=2.2.0
 numpy==1.26.4
 tqdm==4.66.4
+faiss-cpu==1.8.0.post1
+pytest==8.2.2
