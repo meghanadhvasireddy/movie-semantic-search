@@ -29,18 +29,15 @@ def index_stats():
 
 @app.post("/search", response_model=SearchResponse)
 def search(req: SearchRequest):
-    """
-    Embed the query with the SAME model used for corpus,
-    run FAISS top-K, and return titles/snippets.
-    """
     assert service is not None
     q = req.query.strip()
     if not q:
         raise HTTPException(status_code=400, detail="Empty query")
-    took_ms, items = service.search(q, k=req.k)
+    took_ms, items, cached = service.search(q, k=req.k)
     return SearchResponse(
         query=q,
         took_ms=took_ms,
-        cached=False,          # Day 6 will flip this when Redis hits
+        cached=cached,
         results=[SearchResult(**it) for it in items]
     )
+
