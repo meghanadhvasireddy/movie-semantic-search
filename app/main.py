@@ -1,13 +1,31 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from app.models import SearchRequest, SearchResponse, SearchResult, IndexStats
 from app.search_service import SearchService
 from typing import Optional
+from app import config
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
 
 
 app = FastAPI(title="Semantic Search API", version="0.1.0")
 
 # initialize global service singletons at startup
 service: Optional[SearchService] = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global service
+    # pass the compose-provided REDIS_URL
+    service = SearchService(redis_url=config.REDIS_URL) 
+    try:
+        yield
+    finally:
+        service = None
+        
+app = FastAPI(title="Semantic Search API", version="0.1.0", lifespan=lifespan)
+
 
 @app.on_event("startup")
 def _startup():

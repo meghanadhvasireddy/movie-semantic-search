@@ -1,0 +1,22 @@
+# python stuff
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache
+
+# venv
+.venv/
+
+# git
+.git
+.gitignore
+
+# local data/artifacts (we will mount them instead)
+data/
+artifacts/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  api:
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0 --port ${PORT:-8000} --reload
+    volumes:
+      - ./app:/app/app:ro
+      - ./artifacts:/app/artifacts:ro
+      - ./data/processed:/app/data/processed:ro

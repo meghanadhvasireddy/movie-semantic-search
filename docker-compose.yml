@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ss_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ss_api
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: "8000"
+      WORKERS: "2"
+      REDIS_URL: "redis://redis:6379/0"
+      GRACEFUL_TIMEOUT: "30"
+      KEEPALIVE: "5"
+    volumes:
+      # mount code for hot-reload-like dev (no reload, but easy iterate)
+      - ./app:/app/app:ro
+      # mount artifacts + data read-only so API can access them
+      - ./artifacts:/app/artifacts:ro
+      - ./data/processed:/app/data/processed:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
