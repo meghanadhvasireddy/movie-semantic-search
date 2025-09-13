@@ -33,11 +33,12 @@ def search(req: SearchRequest):
     q = req.query.strip()
     if not q:
         raise HTTPException(status_code=400, detail="Empty query")
-    took_ms, items, cached = service.search(q, k=req.k)
+    took_ms, items, cached = service.search(q, k=req.k, page=req.page, per_page=req.per_page)
     return SearchResponse(
         query=q,
         took_ms=took_ms,
         cached=cached,
         results=[SearchResult(**it) for it in items]
     )
+
 
