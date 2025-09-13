@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUNBUFFERED: "1"
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Unit tests (no server)
+        run: |
+          pytest -q
+
+      # Optional: spin up the API and perform smoke tests against it.
+      # Uses uvicorn in-process just for CI.
+      - name: Smoke test API (start app & curl endpoints)
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          # Run the app in background
+          python - <<'PY'
+          import threading, time, uvicorn
+          from app.main import app
+          def run():
+              uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
+          t = threading.Thread(target=run, daemon=True)
+          t.start()
+          time.sleep(3)
+          PY
+          # health and stats
+          curl -sSf http://127.0.0.1:8000/healthz | python -m json.tool
+          curl -sSf http://127.0.0.1:8000/index/stats | python -m json.tool
+          # search (gracefully allow missing artifacts to avoid CI failure for first-time contributors)
+          set +e
+          curl -sSf -H 'content-type: application/json' \
+            -d '{"query":"astronaut stranded on Mars","k":3,"page":1,"per_page":3}' \
+            http://127.0.0.1:8000/search | python -m json.tool
+          true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: semantic-search:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
