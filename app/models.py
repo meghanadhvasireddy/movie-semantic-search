@@ -1,27 +1,37 @@
-from typing import List, Optional
 from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class SearchRequest(BaseModel):
-    query: str = Field(..., min_length=1, description="User search string")
-    k: int = Field(5, ge=1, le=50, description="Top-K results")
-    page: int = Field(1, ge=1, description="Page number (for future use)")
-    per_page: int = Field(5, ge=1, le=50, description="Page size (for future use)")
+    query: str
+    k: int = 5
+    page: int = 1
+    per_page: int = 5
+
+    # Day 12 knobs
+    use_synonyms: bool = True
+    highlight: bool = True
+
+    # Optional filters (only apply if your docs have these fields)
+    year_min: Optional[int] = None
+    year_max: Optional[int] = None
+    genres: Optional[List[str]] = Field(default=None, description="e.g., ['Drama','Sci-Fi']")
 
 class SearchResult(BaseModel):
     id: int
     title: str
     snippet: str
     score: float
+    year: Optional[int] = None
+    genres: Optional[List[str]] = None
 
 class SearchResponse(BaseModel):
     query: str
     took_ms: int
-    cached: bool  # always False today; True/False starting Day 6
+    cached: bool
     results: List[SearchResult]
 
 class IndexStats(BaseModel):
     model: str
     dim: int
     doc_count: int
-    normalized: bool
-    cache_hit_rate: Optional[float] = None  # filled on Day 6
+    cache_hit_rate: float = 0.0

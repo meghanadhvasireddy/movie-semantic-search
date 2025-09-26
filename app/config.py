@@ -7,7 +7,7 @@ PORT = int(os.getenv("PORT", "8000"))
 WORKERS = int(os.getenv("WORKERS", "2"))
 
 # Redis connection (compose sets this for you)
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Request/response timeouts (seconds)
 GRACEFUL_TIMEOUT = int(os.getenv("GRACEFUL_TIMEOUT", "30"))
