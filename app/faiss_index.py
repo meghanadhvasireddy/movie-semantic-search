@@ -1,24 +1,26 @@
 import argparse
 import json
 import os
-from typing import List
 
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from app.searcher import (
-    ART_DIR, EMB_PATH, IDS_PATH, META_PATH, INDEX_PATH, FaissSearcher
-)
+from app.searcher import EMB_PATH, IDS_PATH, INDEX_PATH, META_PATH, FaissSearcher
 
 DOCS_PATH = "data/processed/docs.jsonl"  # used only to print titles/snippets for demo
+
 
 def build_index(index_type: str = "flatip") -> None:
     """
     Build a FAISS index from embeddings and write to disk.
     index_type: 'flatip' (exact, inner product) or 'hnsw' (approximate, faster)
     """
-    if not os.path.exists(EMB_PATH) or not os.path.exists(IDS_PATH) or not os.path.exists(META_PATH):
+    if (
+        not os.path.exists(EMB_PATH)
+        or not os.path.exists(IDS_PATH)
+        or not os.path.exists(META_PATH)
+    ):
         raise SystemExit("Missing artifacts. Run Day 3 indexer first.")
 
     with open(META_PATH, "r", encoding="utf-8") as f:
@@ -41,6 +43,7 @@ def build_index(index_type: str = "flatip") -> None:
     faiss.write_index(index, INDEX_PATH)
     print(f"[build] wrote index to {INDEX_PATH}")
 
+
 def _load_titles() -> dict:
     """
     Map movie id -> title (to print friendly results in CLI demo).
@@ -56,10 +59,12 @@ def _load_titles() -> dict:
             id_to_title[int(obj["id"])] = obj.get("title", f"id_{obj['id']}")
     return id_to_title
 
+
 def embed_query(model_name: str, text: str) -> np.ndarray:
     model = SentenceTransformer(model_name)
     vec = model.encode([text], normalize_embeddings=True)
     return vec.astype("float32")
+
 
 def cli_search(query: str, k: int = 5):
     # read model name from meta to ensure the same embedder is used for queries
@@ -80,6 +85,7 @@ def cli_search(query: str, k: int = 5):
     for rank, (score, mid) in enumerate(zip(scores[0], ids[0]), 1):
         title = id_to_title.get(int(mid), f"id_{int(mid)}")
         print(f"{rank:2d}. {title:40s}  score={score:.3f}  (id={int(mid)})")
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Tuple
+from typing import Tuple
 
 import faiss
 import numpy as np
@@ -11,11 +11,13 @@ IDS_PATH = os.path.join(ART_DIR, "ids.npy")
 META_PATH = os.path.join(ART_DIR, "meta.json")
 INDEX_PATH = os.path.join(ART_DIR, "faiss.index")
 
+
 class FaissSearcher:
     """
     Loads embeddings + ids + FAISS index and performs top-K similarity search.
     Assumes embeddings are L2-normalized; uses inner product (cosine-equivalent).
     """
+
     def __init__(self):
         if not os.path.exists(META_PATH):
             raise FileNotFoundError(f"Missing {META_PATH}. Did you run Day 3 indexer?")
@@ -48,7 +50,9 @@ class FaissSearcher:
         norms = np.linalg.norm(v, axis=1, keepdims=True) + 1e-12
         return v / norms
 
-    def search_vectors(self, query_vectors: np.ndarray, k: int = 5) -> Tuple[np.ndarray, np.ndarray]:
+    def search_vectors(
+        self, query_vectors: np.ndarray, k: int = 5
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         query_vectors: shape (Q, dim)
         returns (scores, id_array) where:
@@ -58,6 +62,6 @@ class FaissSearcher:
         if query_vectors.shape[1] != self.dim:
             raise ValueError(f"query dim {query_vectors.shape[1]} != index dim {self.dim}")
         q = self._normalize(query_vectors.astype("float32"))
-        scores, idx = self.index.search(q, k)          # idx are ROW NUMBERS into embeddings
-        data_ids = self.ids[idx]                       # map row numbers to your movie 'id'
+        scores, idx = self.index.search(q, k)  # idx are ROW NUMBERS into embeddings
+        data_ids = self.ids[idx]  # map row numbers to your movie 'id'
         return scores, data_ids

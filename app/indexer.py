@@ -1,13 +1,13 @@
-import os
 import json
 import math
+import os
 from typing import Iterator, List, Tuple
 
 import numpy as np
-from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
-DOCS_PATH = "data/processed/docs.jsonl"       # full dataset
+DOCS_PATH = "data/processed/docs.jsonl"  # full dataset
 SAMPLE_PATH = "data/processed/sample_500.jsonl"  # small sanity set
 ART_DIR = "artifacts"
 META_PATH = os.path.join(ART_DIR, "meta.json")
@@ -18,11 +18,13 @@ MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # 384-dim, fast, good
 
 os.makedirs(ART_DIR, exist_ok=True)
 
+
 def read_jsonl(path: str) -> Iterator[dict]:
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 yield json.loads(line)
+
 
 def load_documents(path: str) -> Tuple[List[int], List[str]]:
     ids, texts = [], []
@@ -35,9 +37,11 @@ def load_documents(path: str) -> Tuple[List[int], List[str]]:
                 texts.append(t)
     return ids, texts
 
+
 def chunk(iterable, size):
     for i in range(0, len(iterable), size):
-        yield iterable[i:i+size]
+        yield iterable[i : i + size]
+
 
 def embed_corpus(model_name: str, texts: List[str], batch_size: int = 256) -> np.ndarray:
     """
@@ -45,11 +49,16 @@ def embed_corpus(model_name: str, texts: List[str], batch_size: int = 256) -> np
     """
     model = SentenceTransformer(model_name)
     embeddings = []
-    for batch in tqdm(chunk(texts, batch_size), total=math.ceil(len(texts)/batch_size), desc="Embedding"):
+    for batch in tqdm(
+        chunk(texts, batch_size), total=math.ceil(len(texts) / batch_size), desc="Embedding"
+    ):
         # normalize_embeddings=True makes vectors length ~1 (good for cosine/IP)
-        vecs = model.encode(batch, batch_size=batch_size, show_progress_bar=False, normalize_embeddings=True)
+        vecs = model.encode(
+            batch, batch_size=batch_size, show_progress_bar=False, normalize_embeddings=True
+        )
         embeddings.append(np.asarray(vecs, dtype=np.float32))
     return np.vstack(embeddings)
+
 
 def save_artifacts(embeddings: np.ndarray, ids: List[int], meta: dict):
     np.save(EMB_PATH, embeddings)
@@ -58,6 +67,7 @@ def save_artifacts(embeddings: np.ndarray, ids: List[int], meta: dict):
         json.dump(meta, f, ensure_ascii=False, indent=2)
     print(f"[OK] Saved: {EMB_PATH}, {IDS_PATH}, {META_PATH}")
 
+
 def estimate_memory(num_docs: int, dim: int = 384, dtype_size: int = 4) -> float:
     """
     Rough memory in MB for embeddings array (ignores overhead).
@@ -65,6 +75,7 @@ def estimate_memory(num_docs: int, dim: int = 384, dtype_size: int = 4) -> float
     """
     bytes_needed = num_docs * dim * dtype_size
     return bytes_needed / (1024 * 1024)
+
 
 def main(use_sample=False, batch_size=256):
     path = SAMPLE_PATH if use_sample else DOCS_PATH
@@ -87,14 +98,18 @@ def main(use_sample=False, batch_size=256):
         "dim": int(dim),
         "doc_count": int(len(ids)),
         "normalized": True,
-        "notes": "Vectors are L2-normalized for cosine/IP search."
+        "notes": "Vectors are L2-normalized for cosine/IP search.",
     }
     save_artifacts(embs, ids, meta)
 
+
 if __name__ == "__main__":
     import argparse
+
     p = argparse.ArgumentParser()
-    p.add_argument("--sample", action="store_true", help="Embed only sample_500.jsonl for a quick sanity run")
+    p.add_argument(
+        "--sample", action="store_true", help="Embed only sample_500.jsonl for a quick sanity run"
+    )
     p.add_argument("--batch-size", type=int, default=256, help="Embedding batch size")
     args = p.parse_args()
 

@@ -1,8 +1,10 @@
 import os
+
 import numpy as np
 import pytest
 
-from app.searcher import FaissSearcher, INDEX_PATH
+from app.searcher import INDEX_PATH, FaissSearcher
+
 
 @pytest.mark.skipif(not os.path.exists(INDEX_PATH), reason="index not built yet")
 def test_faiss_search_topk_shape():

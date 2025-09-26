@@ -3,7 +3,7 @@ import os
 import re
 import time
 import uuid
-from typing import Dict, Tuple, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import redis
@@ -27,9 +27,7 @@ def normalize_query(q: str) -> str:
 class SearchService:
     def __init__(self, redis_url: str):
         # ----- Embedding model -----
-        self.model_name = os.getenv(
-            "EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
-        )
+        self.model_name = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
         self.model = SentenceTransformer(self.model_name)
 
         # ----- FAISS searcher (loads artifacts) -----
@@ -41,7 +39,7 @@ class SearchService:
 
         # ----- Retrieval / rerank knobs -----
         self.semantic_k = int(os.getenv("SEMANTIC_K", "200"))  # candidate pool from FAISS
-        self.alpha = float(os.getenv("HYBRID_ALPHA", "0.8"))   # mix semantic vs tfidf
+        self.alpha = float(os.getenv("HYBRID_ALPHA", "0.8"))  # mix semantic vs tfidf
 
         # ----- Cache accounting -----
         self.cache_hits = 0
@@ -150,8 +148,8 @@ class SearchService:
             return pairs
 
         tfidf = TfidfVectorizer(max_features=20000, ngram_range=(1, 2))
-        X = tfidf.fit_transform(docs)         # (N, V)
-        q_vec = tfidf.transform([query_text]) # (1, V)
+        X = tfidf.fit_transform(docs)  # (N, V)
+        q_vec = tfidf.transform([query_text])  # (1, V)
 
         numer = (X @ q_vec.T).toarray().ravel()
         X_norm = np.sqrt((X.power(2)).sum(axis=1)).A.ravel() + 1e-12
@@ -210,12 +208,14 @@ class SearchService:
             meta = self.id_to_doc.get(mid, {"title": f"id_{mid}", "text": ""})
             txt = meta.get("text", "") or ""
             snippet = (txt[:220] + "…") if len(txt) > 220 else txt
-            results.append({
-                "id": mid,
-                "title": meta.get("title", f"id_{mid}"),
-                "snippet": snippet,
-                "score": float(score),
-            })
+            results.append(
+                {
+                    "id": mid,
+                    "title": meta.get("title", f"id_{mid}"),
+                    "snippet": snippet,
+                    "score": float(score),
+                }
+            )
 
         took_ms = int((time.time() - t0) * 1000)
 

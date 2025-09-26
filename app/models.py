@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class SearchRequest(BaseModel):
     query: str
@@ -16,6 +18,7 @@ class SearchRequest(BaseModel):
     year_max: Optional[int] = None
     genres: Optional[List[str]] = Field(default=None, description="e.g., ['Drama','Sci-Fi']")
 
+
 class SearchResult(BaseModel):
     id: int
     title: str
@@ -24,11 +27,13 @@ class SearchResult(BaseModel):
     year: Optional[int] = None
     genres: Optional[List[str]] = None
 
+
 class SearchResponse(BaseModel):
     query: str
     took_ms: int
     cached: bool
     results: List[SearchResult]
+
 
 class IndexStats(BaseModel):
     model: str

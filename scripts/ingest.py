@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 import pandas as pd
 
 RAW_DIR = "data/raw"
@@ -11,6 +12,7 @@ OUT_PARQUET = os.path.join(OUT_DIR, "docs.parquet")  # optional fast reload
 
 os.makedirs(OUT_DIR, exist_ok=True)
 
+
 def clean_text(s: str) -> str:
     """Make text tidy: remove newlines, extra spaces, leading/trailing blanks."""
     if not isinstance(s, str):
@@ -19,12 +21,14 @@ def clean_text(s: str) -> str:
     s = " ".join(s.split())  # collapse multiple spaces
     return s
 
+
 def get_year(date_str: str):
     """Try to extract a 4-digit year from the date column."""
     if not isinstance(date_str, str) or len(date_str) < 4:
         return None
     y = date_str[:4]
     return int(y) if y.isdigit() else None
+
 
 def ingest_cmu(plot_path: str, meta_path: str) -> pd.DataFrame:
     # 1) Load plot summaries: <wiki_id>\t<plot>
@@ -35,9 +39,9 @@ def ingest_cmu(plot_path: str, meta_path: str) -> pd.DataFrame:
         header=None,
         names=["wiki_id", "plot"],
         dtype={0: str, 1: str},
-        quoting=3,      # QUOTE_NONE: don't treat quotes specially
+        quoting=3,  # QUOTE_NONE: don't treat quotes specially
         encoding="utf-8",  # try utf-8 first; switch to latin-1 if needed
-        on_bad_lines="skip"
+        on_bad_lines="skip",
     )
     # Basic clean
     plots["plot"] = plots["plot"].fillna("").map(clean_text)
@@ -52,7 +56,7 @@ def ingest_cmu(plot_path: str, meta_path: str) -> pd.DataFrame:
         names=["wiki_id", "freebase_id", "title", "date"],
         dtype=str,
         encoding="utf-8",
-        on_bad_lines="skip"
+        on_bad_lines="skip",
     )
     meta["title"] = meta["title"].fillna("").map(clean_text)
     meta = meta[meta["title"].str.len() > 0]
@@ -76,12 +80,17 @@ def ingest_cmu(plot_path: str, meta_path: str) -> pd.DataFrame:
     cols = ["id", "title", "text", "year"] if "year" in df.columns else ["id", "title", "text"]
     return df[cols]
 
+
 def save_jsonl(df: pd.DataFrame, out_path: str):
     with open(out_path, "w", encoding="utf-8") as f:
         for _, row in df.iterrows():
-            obj = {k: (None if (pd.isna(row[k]) if k in row else False) else row[k]) for k in df.columns}
+            obj = {
+                k: (None if (pd.isna(row[k]) if k in row else False) else row[k])
+                for k in df.columns
+            }
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
     print(f"[OK] Saved {len(df)} docs → {out_path}")
+
 
 def maybe_save_parquet(df: pd.DataFrame, out_path: str):
     try:
@@ -89,6 +98,7 @@ def maybe_save_parquet(df: pd.DataFrame, out_path: str):
         print(f"[OK] Parquet copy → {out_path}")
     except Exception as e:
         print(f"[WARN] Could not save parquet: {e}")
+
 
 if __name__ == "__main__":
     # Sanity checks
@@ -109,5 +119,7 @@ if __name__ == "__main__":
 
     # Optional: also save a small sample for tests/benchmarks
     sample_path = os.path.join(OUT_DIR, "sample_500.jsonl")
-    df.sample(min(500, len(df)), random_state=42).to_json(sample_path, orient="records", lines=True, force_ascii=False)
+    df.sample(min(500, len(df)), random_state=42).to_json(
+        sample_path, orient="records", lines=True, force_ascii=False
+    )
     print(f"[OK] Sample for tests → {sample_path}")
