@@ -113,4 +113,4 @@ HYBRID_ALPHA=0.8
 ## Author
 **Meghanadh Vasireddy**  
  Brown University (CS & Applied Math)
-[GitHub](https://github.com/meghanadhvasireddy) · [LinkedIn](https://www.linkedin.com/in/meghanadhv)
+[GitHub](https://github.com/meghanadhvasireddy) · [LinkedIn](https://www.linkedin.com/in/meghanadhv/)
